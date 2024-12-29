@@ -13,7 +13,7 @@ Prompt Start is a framework designed to assist developers in selecting appropria
 The project integrates three key open-source components:
 - [PaperQA](https://github.com/whitead/paper-qa): For retrieving and analyzing information from scientific papers
 - [RagBuilder](https://github.com/KruxAI/ragbuilder): For optimizing RAG configurations
-- [Kotaemon](https://github.com/cinnamon-github/kotaemon): As the foundation for our RAG-based implementation
+- [Kotaemon](https://github.com/Cinnamon/kotaemon): As the foundation for our RAG-based implementation
 
 ## Phase 1: RagBuilder Implementation
 
