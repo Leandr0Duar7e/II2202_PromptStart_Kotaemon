@@ -1,0 +1,221 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% template for II2202 report
+%% original 2015.11.24
+%% revised  2024.09.17
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass[12pt,twoside,english]{article}
+
+\input{lib/includes}
+\input{lib/acronyms}
+
+
+
+\makeglossaries % Initialize glossaries
+
+\title{Prompt Start: A Framework Optimizing \\ Prompt Initialization for Developers}
+\author{
+        \textsc{Leandro Duarte}
+            \qquad
+        \textsc{Kusumastuti Cahyaningrum}
+        \mbox{}\\
+        \normalsize
+            \texttt{leandrod}
+        \textbar{}
+            \texttt{kcah}
+        \normalsize
+            \texttt{@kth.se}
+}
+\date{\today}
+
+
+\lhead{II2202, Fall 2024, Period 1-2}
+\chead{First draft report}
+\rhead{\today}
+
+\makeatletter
+\let\ps@plain\ps@fancy
+\makeatother
+
+\setlength{\headheight}{15pt}
+\begin{document}
+
+\maketitle
+
+
+\begin{abstract}
+\label{sec:abstract}
+
+\Glspl{llm} are increasingly integral to modern software applications, enhancing both user interactions and internal processes. Despite their potential, developers often face the "Blank Page Problem," which arises when they first encounter the task of selecting the optimal prompt design and crafting the initial prompt text. Our research introduces a framework designed to assist developers in identifying the best prompt design techniques for their specific use cases in \glspl{llm}-based applications. By leveraging a \gls{rag} system, our framework offers a recommended prompt design approach, an initial prompt proposal, and detailed explanations supported by the latest \gls{sota} papers, GitHub repositories, and expert blogs. This approach aims to streamline the prompt creation process, reducing the time developers spend on research and decision-making. We anticipate that developer feedback, application improvements, and performance comparisons will demonstrate the framework's effectiveness. All code, demonstrations, and datasets will be made available at \url{https://github.com/Leandr0Duar7e/II2202_PromptStart_Kotaemon}.
+
+
+\end{abstract}
+\clearpage
+
+\selectlanguage{english}
+\tableofcontents
+\section*{List of Acronyms and Abbreviations}
+\renewcommand{\glossarysection}[2][]{} %% skip the title
+\printglossary[type=\acronymtype,nonumberlist]
+
+\clearpage
+
+\section{Introduction}
+
+\gls{genai} has been evolving rapidly. Since the seminal work "Attention is All You Need"~\cite{vaswani2023attentionneed}, which revolutionized \gls{nlp}, to the widespread adoption of ChatGPT in 2022, driven by advancements in \glspl{llm}, the field has seen remarkable progress. The OpenAI GPT series exemplifies this evolution, currently achieving human-level capabilities in numerous tasks. As \glspl{llm} scale in terms of training data and parameters, and computational resources grow, the models exhibit emergent abilities~\cite{wei2022emergentabilitieslargelanguage}, making them powerful tools for developers across various applications, regardless of the provider company.
+
+The rise of \glspl{llm} has spurred interest in prompt design to optimize their outputs. Techniques like Few-shot prompting and \gls{cot} prompting~\cite{wei2023chainofthoughtpromptingelicitsreasoning} have become standard practices. Building on these, newer methods such as ReAct~\cite{yao2023reactsynergizingreasoningacting}, Reflexion~\cite{shinn2023reflexionlanguageagentsverbal}, Self-Refine~\cite{madaan2023selfrefineiterativerefinementselffeedback}, and Tree-of-Thoughts~\cite{yao2023treethoughtsdeliberateproblem} have further enhanced task-solving capabilities by incorporating feedback loops and external tools. These innovations have culminated in the creation of Agentic Workflows, which integrate multiple \gls{llm} calls, prompts, and iterations before providing the final output, tackling complex tasks and achieving near-human performance. Notable examples include MetaGPT~\cite{hong2024metagptmetaprogrammingmultiagent}, ChatDev~\cite{qian2024chatdevcommunicativeagentssoftware}, and AutoGen~\cite{wu2023autogenenablingnextgenllm}.
+
+In implementing these methods, developers follow a \textit{prompt engineering process}, iteratively refining prompts to optimize outputs. Significant work, such as DSPy~\cite{khattab2023dspycompilingdeclarativelanguage}, has been done to automate the Prompt Engineering task. While it remains complex and challenging to implement, DSPy and similar projects are continuously evolving, supported by a wealth of research and papers.
+
+However, the problem we address in this research is distinct and precedes the prompt engineering process. It focuses on the \textit{initial prompt design process}. Beyond the prompt design techniques already mentioned, numerous others provide equally high-quality outputs. A large research team, including members from OpenAI, Microsoft, Stanford, and other institutions~\cite{schulhoff2024promptreportsystematicsurvey}, analyzed 1565 papers and identified 58 different text-based prompt design techniques. This abundance of techniques and resources presents a significant challenge: each time there is a need to start a prompt engineering process, developers are confronted with overwhelming options. Then, they must choose between investing substantial time in research to find optimal methods or relying on intuition, potentially missing more effective approaches that could better serve their applications.
+
+The motivation for our work is clear: addressing this bottleneck at the beginning of the design process is critical. By improving the initial prompt design phase, we can enable developers to make informed, high-quality decisions more efficiently, leading to more robust and effective applications downstream.
+
+
+\begin{lstlisting}[style=compactcode, language=Python, caption={\small Example code illustrating the Blank Page Problem}, label={lst:blank-page}]
+response = llm.ChatCompletion.create(
+    model="llm",
+    messages=[
+        {"role": "system", "content": " "}
+    ] )
+\end{lstlisting}
+
+Listing~\ref{lst:blank-page} epitomizes the "Blank Page Problem," where developers grapple with the initial creation of a prompt before any iterative refinement.
+
+Our research introduces a framework to streamline this process, providing developers with a reliable method to select the most suitable prompt design for their use case. The core of our framework is an Agentic \gls{rag} system~\cite{lewis2021retrievalaugmentedgenerationknowledgeintensivenlp}, which combines retrieval-based methods with LLMs and agentic workflows to deliver optimal solutions. This system leverages a knowledge base comprising influential papers, reputable GitHub repositories, and model-specific documentation, guiding developers in choosing the best approach for their tasks.
+
+To build this framework, we utilize three open-source projects: PaperQA~\cite{Skarlinski2024PaperQA}, RagBuilder~\cite{KruxAI2024RagBuilder}, and Kotaemon~\cite{Cinnamon2024Kotaemon}. These tools are instrumental in searching research papers, configuring RAG systems, and developing agentic \gls{rag} systems, respectively.
+
+The subsequent sections of this report will delve into the theoretical background, methodologies, and expected outcomes of our work. 
+\clearpage
+
+\section{Theoretical Framework}
+\label{sec:background}
+
+This research is grounded in the capabilities of \glspl{llm} and aims to optimize their use through innovative prompting and retrieval techniques. At the core of this study is the concept of prompting, which involves crafting specific input texts to guide \glspl{llm} in generating desired outputs. Effective prompting is crucial as it directly influences the performance and applicability of \glspl{llm} across various tasks.
+
+Schulhoff et al.~\cite{schulhoff2024promptreportsystematicsurvey} provide a comprehensive taxonomy of prompting techniques, offering a structured understanding essential for developers and researchers navigating the diverse landscape of \gls{llm} applications. This taxonomy identifies six key types of prompting techniques: (1) zero-shot prompting, which relies solely on task instructions without examples; (2) few-shot prompting, which includes example input-output pairs; (3) thought generation techniques like \gls{cot} and Tree-of-Thought, which break down complex problems into sequential steps; (4) decomposition prompting, which divides tasks into manageable sub-tasks; (5) self-criticism prompting, which enables iterative refinement; and (6) ensembling prompting, which combines multiple outputs for improved accuracy. The paper~\cite{schulhoff2024promptreportsystematicsurvey} serves as an excellent starting point for anyone entering the field, providing insights
+into recent concepts and ide
+
+Prompt design techniques are methodologies employed to elicit specific behaviors and outputs from \glspl{llm}. Early techniques like Few-Shot Learning involve providing input-output examples within prompts to guide the model's responses, while \gls{cot} prompting encourages \glspl{llm} to reason through problems step by step, enhancing their problem-solving capabilities~\cite{wei2023chainofthoughtpromptingelicitsreasoning}. Recent advancements have introduced more sophisticated techniques that build upon these foundational methods. For instance, Self-Refine~\cite{madaan2023selfrefineiterativerefinementselffeedback} allows \glspl{llm} to iteratively improve their outputs by generating and incorporating their own feedback. Reflexion~\cite{shinn2023reflexionlanguageagentsverbal} enables models to maintain reflective memory buffers, fostering better decision-making through verbal reinforcement learning. Additionally, ReAct~\cite{yao2023reactsynergizingreasoningacting} integrates reasoning traces with task-specific actions, allowing \glspl{llm} to interact with external tools and refine their outputs dynamically. More complex approaches like Tree of Thoughts~\cite{yao2023treethoughtsdeliberateproblem} introduce frameworks for deliberate problem-solving by exploring multiple reasoning paths, thereby achieving higher accuracy in complex tasks.
+
+Even seemingly simple techniques, like prompting the model to reread the prompt~\cite{xu2024rereadingimprovesreasoninglarge}, can significantly improve reasoning by firing bidirectional attention mechanisms.
+
+Recent developments from OpenAI with their o1 model demonstrate strong performance even with zero-shot prompting, suggesting the existence of advanced internal prompt design techniques that remain undisclosed. These techniques were likely used to train the model through reinforcement learning, enhancing its inherent reasoning capabilities. The fact that their methods remain closed source is a significant limitation for the broader community, motivating this research to develop open-source, high-quality prompting methods that can empower developers to achieve better outputs.
+
+Prompt Engineering represents the iterative process of refining prompts to enhance \gls{llm} performance. This systematic approach involves testing and modifying prompts to achieve more accurate and contextually appropriate outputs. Significant progress has been made in automating this process, as demonstrated by DSPy~\cite{khattab2023dspycompilingdeclarativelanguage}, a framework that optimizes prompts based on input-output examples tailored to specific tasks. Such automation reduces the manual effort required in traditional prompt engineering while maintaining or improving output quality.
+
+Agentic workflows, commonly referred to as agents, represent an evolution of prompt design techniques by incorporating external tools and collaborative strategies among multiple \gls{llm}-based entities. These systems leverage advanced prompting techniques to enable agents to communicate, collaborate, and utilize external resources to solve complex tasks efficiently. Notable frameworks in this domain include MetaGPT~\cite{hong2024metagptmetaprogrammingmultiagent}, which utilizes meta-programming to coordinate multiple agents, each with specialized roles, enhancing collaborative problem-solving capabilities. ChatDev~\cite{qian2024chatdevcommunicativeagentssoftware} employs communicative agents that interact through unified language-based communication, streamlining phases like design, coding, and testing in software development. AutoGen~\cite{wu2023autogenenablingnextgenllm} provides a framework for multi-agent conversations, allowing agents to converse and collaborate to accomplish tasks across diverse domains. GraphReader~\cite{li2024graphreaderbuildinggraphbasedagent} enhances long-context abilities by structuring inputs into graphs, enabling agents to autonomously explore and process extensive information efficiently. 
+\newpage
+These agentic systems rely on advanced prompt design techniques to enable seamless coordination among agents, optimize decision-making, and facilitate interactions with external tools. Prompt design serves as the foundation for defining agent behaviors, task-specific instructions, and inter-agent communication. By carefully crafting these prompts, developers ensure that agents can dynamically collaborate, adapt to changing contexts, and address complex tasks effectively. This integration of prompt design with external tools highlights the continued importance of high-quality, well-structured prompts in achieving reliable and superior \gls{llm} outputs.\\
+
+In summary, the integration of effective prompt design, iterative prompt engineering, and collaborative agentic workflows is fundamental to optimizing \glspl{llm}. This theoretical framework lays the groundwork for developing our project, Prompt Start, which leverages \gls{rag} methods to enhance initial prompt definition, empowering developers with open-source, high-quality prompting solutions.
+
+\subsection{Retrieval-Augmented Generation (RAG)}
+
+\gls{rag} is a hybrid framework that combines the generative capabilities of \glspl{llm} with information retrieval systems to enhance response quality, factual accuracy, and context-awareness. Unlike standalone \glspl{llm}, which rely solely on pre-trained knowledge, \gls{rag} incorporates a retrieval mechanism to fetch relevant, up-to-date information from external knowledge bases. This integration ensures that responses are grounded in factual, current data, effectively reducing hallucination issues where \glspl{llm} generate plausible yet incorrect information~\cite{lewis2020retrieval}.
+
+The \gls{rag} framework operates in two stages: retrieval and generation. In the retrieval stage, relevant documents or data are fetched using mechanisms such as dense passage retrieval (DPR)~\cite{karpukhin2020dense}. In the generation stage, this retrieved content is provided as additional context, enabling the \gls{llm} to produce responses that are both contextually relevant and factually accurate. 
+
+A recent study by Borgeaud et al.~\cite{borgeaud2022improving} explores retrieval-augmented methods that enhance domain adaptation and task-specific customization, which are particularly relevant for integrating RAG into prompt engineering frameworks. Similarly, Yun et al.~\cite{yun2023retrieval} provide insights into optimizing retrieval pipelines, contributing to more efficient \gls{llm} interactions. These advancements underscore the importance of RAG in bridging the gap between static language models and the dynamic information needs of real-world applications.
+
+By incorporating real-time or domain-specific information, RAG reduces hallucination issues often observed in LLMs and enhances their applicability in specialized contexts. In the domain of prompt optimization for software engineers, RAG provides access to the latest research papers, blog posts, and community-driven resources, enabling developers to explore state-of-the-art prompting techniques. It facilitates the selection of curated prompt design options while offering explanations tailored to specific use cases. Furthermore, RAG has the potential to enhance decision-making by grounding recommendations in factual, up-to-date references, which may address limitations associated with relying solely on the static pre-training of \glspl{llm}.
+
+\subsection{Related Work}
+
+In developing our framework, we draw upon several pioneering projects. One such project is PaperQA, spearheaded by Skarlinski et al.~\cite{Skarlinski2024PaperQA}. This project stands out for its innovative approach to enhancing the factual accuracy of \glspl{lm}. PaperQA has demonstrated to outperform human experts in tasks such as information retrieval, summarization, and contradiction detection, in scientific knowledge.
+
+Another integral component of our framework is RagBuilder~\cite{KruxAI2024RagBuilder}, a toolkit for optimizing \gls{rag} configurations. RagBuilder employs Bayesian optimization to efficiently identify optimal combinations of RAG parameters, including chunking strategies, chunk sizes, embedding models, and retriever types. 
+
+Kotaemon~\cite{Cinnamon2024Kotaemon} serves as the foundational platform for our project, offering a hybrid RAG pipeline with sophisticated retrieval and reasoning capabilities. Its architecture combines full-text and vector search with re-ranking mechanisms to ensure optimal retrieval quality. We'll also leverage its modern web interface.
+
+\clearpage
+
+\section{Research Question and Hypothesis}
+
+With this research, we propose Prompt Start, a framework designed to leverage recent advancements in \gls{genai} to provide developers with an efficient, fast, and high-quality method for defining initial prompts tailored to their specific use cases in each prompt engineering process.
+
+The central research question guiding this work is:  
+\textit{What framework can support developers in selecting appropriate prompt design techniques for initial prompts in \gls{llm}-based applications?}
+
+Our approach will utilize \gls{sota} components, including embedding models to transform data into vectors, vector databases for data storage, retrieval methods to search and retrieve relevant information, ranking algorithms to prioritize documents based on their relevance, language models to construct outputs, and agentic workflows to optimize the final outcome. By integrating these innovations, we aim to provide the best possible solution to the "Blank Page Problem."
+
+\vspace{0.5em}
+\noindent{Our key contributions include:}
+\begin{itemize}[label=$\bullet$, leftmargin=1.5em, itemsep=0.2em, parsep=0em]
+    \item Utilizing papers, projects, and blogs to identify the most suitable prompt design technique for any use case
+    \item Developing Prompt Start, a framework for initial prompt design definition
+    \item Publishing an open-source repository with our work
+    \item Evaluating the framework's impact on applications and the accuracy of the chosen techniques
+\end{itemize}
+
+\vspace{0.5em}
+
+To achieve these goals, we develop code that integrates three open-source projects~\cite{Skarlinski2024PaperQA,KruxAI2024RagBuilder,Cinnamon2024Kotaemon} into our framework. We gathered qualitative feedback from industry developers and conduct quantitative evaluations of the correctness of chosen prompt designs and performance improvements in specific use cases. These evaluations measure the success of our framework through both qualitative and quantitative metrics.
+
+\section{Research Methodology}
+
+Our research methodology is centered on the development and integration of three key open-source projects: PaperQA, RagBuilder, and Kotaemon. PaperQA is utilized to focus on retrieving information from scientific papers and writings, ensuring that our framework has access to reliable and factual data. RagBuilder provides the initial configurations for our RAG system, allowing us to optimize retrieval processes through efficient parameter tuning. Kotaemon serves as the boilerplate for our code development, where we integrate the outputs from PaperQA and apply configurations based on RagBuilder's results.
+
+In parallel with code development, we are assembling a comprehensive knowledge dataset. This dataset already includes a substantial collection of scientific papers, such as those referenced in this document. We are also incorporating GitHub projects that offer valuable insights into prompting, as well as language model documentation and blogs that are recognized by the community through social media and influential newsletters.
+
+For the evaluation of our framework, we plan to employ a combination of quantitative and qualitative metrics. Quantitative metrics include accuracy, contextual relevance, and efficiency, which will be benchmarked against existing industry-standard techniques and randomly generated prompts. Qualitative evaluation might involve gathering feedback from developers and \gls{llm} users through surveys and interviews. This feedback will likely focus on usability, clarity, and overall satisfaction with the prompt suggestions provided by our framework.
+
+Our methodology emphasizes reproducibility, with plans to share all code and documentation in a GitHub repository. This will enable other researchers and developers to replicate and build upon our work. 
+
+\clearpage
+\subsection{Framework Architecture}
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\textwidth]{workflowdiagram.png}
+    \caption[\centering Framework Architecture]{\centering Framework Architecture: A flowchart illustrating the components and data flow of our Agentic RAG based prompt optimization system, from data sources through the pipeline to evaluation.}
+    \label{fig:framework-architecture}
+\end{figure}
+
+
+1. \textbf{Data Sources}: The framework accepts user inputs, including project files, use case descriptions, and optimization criteria. It also ingests data from selected papers, GitHub repositories, and blogs.
+
+Papers are selected based on industry acclaim, citation counts, mentions in reputable blogs and newsletters, and endorsements from influential figures. They are chosen for their relevance to the research objectives, the novelty of techniques, and their potential impact on the field.
+
+GitHub repositories are evaluated by the number of forks and stars, mentions in important newsletters and tweets, and overall community engagement. Selection criteria include the implementation of cutting-edge prompting techniques, code quality, and thorough documentation.
+
+Blogs include high-quality expert articles that discuss state-of-the-art prompt design techniques and their practical applications. These sources provide additional insights into emerging trends and best practices in the field.
+
+2. \textbf{Retrieval-Augmented Generation (RAG) Pipeline}: The RAG system processes the ingested data and retrieves relevant information based on the user's inputs. Initially, RagBuilder optimizes the RAG configuration through Bayesian optimization, determining optimal parameters such as chunk sizes, embedding models, and retrieval strategies. These configurations are then applied to our Kotaemon-based implementation. The retrieval process is distributed across specialized components: PaperQA focuses on extracting relevant information from scientific papers, while Kotaemon handles retrieval from GitHub repositories and expert blogs. Retrieved content undergoes a re-ranking process to ensure the most pertinent information is prioritized. Finally, Mistral Large, our chosen LLM, processes this curated context to generate the output.
+
+3. \textbf{Output}: Using the retrieved information and user inputs, the agent analyzes the most suitable prompting techniques for the given use case. It considers factors such as the complexity of the task, desired output format, and optimization criteria to suggest the optimal approach. Based on the recommended prompting technique, the generator creates an initial prompt proposal. It incorporates best practices and insights from the retrieved data to craft a prompt that aligns with the user's requirements. The relevant documents to the proposal are presented to the user on a side panel.
+
+4. \textbf{Evaluation}: The framework's evaluation is planned to include both quantitative metrics, such as accuracy and response time, and qualitative feedback from developers. This evaluation phase will allow us to assess and improve the framework's effectiveness.
+
+\subsection{Designing Process}
+The initial phase of our research focused on implementing and evaluating RagBuilder~\cite{KruxAI2024RagBuilder}, a toolkit for optimizing \gls{rag} configurations. We successfully deployed the framework locally, which required setting up both the RagBuilder application and a Neo4j database instance for GraphRAG capabilities. While the installation process presented several environmental and dependency challenges, we were able to establish a working setup. Our implementation approach prioritized practicality within resource constraints, particularly focusing on computational efficiency and API quota management, which led us to strategically select more cost-effective models like GPT-3.5 instead of larger counterparts.
+
+The process involved data sampling and preprocessing techniques to manage the dataset's size, followed by custom \gls{rag} configurations optimized for our resource constraints. We deliberately limited the number of configurations being tested and avoided the "Evaluate All Possible Combinations" approach to maintain efficiency. While predefined templates showed limited success, our custom configurations demonstrated better adaptability to our specific use case. We generated a synthetic test dataset for evaluation, as this approach offered a practical balance between comprehensive testing and development time constraints. 
+
+The next phase involved an extensive exploration of the Kotaemon codebase~\cite{Cinnamon2024Kotaemon}, which presented significant challenges in implementation and customization. The process of understanding and adapting this complex codebase proved to be time-intensive, spanning several weeks. Initial attempts focused on resolving numerous dependency conflicts and environmental setup issues across different operating systems and configurations. This phase highlighted the inherent complexity of integrating multiple cutting-edge technologies in a production-ready application.
+
+A significant portion of the development time was dedicated to modifying the Kotaemon codebase to create a specialized version for our Prompt Start framework. This involved integrating the optimal RAG configurations identified through RagBuilder, implementing custom document processing pipelines, and preparing the system architecture to incorporate PaperQA's scientific paper analysis capabilities. The development process was iterative, with each modification requiring extensive testing and debugging due to the interconnected nature of the system's components.
+
+However, as the complexity of the customizations grew, we encountered increasing challenges in maintaining system stability while implementing these modifications. The time required to resolve dependencies and fix integration issues began to impact our development timeline significantly. This led to a strategic decision to pivot our approach, focusing instead on leveraging Kotaemon's existing capabilities through its configuration interface rather than continuing with deep architectural modifications.
+
+To validate our framework's effectiveness, we developed an evaluation approach using real-world examples. We selected two representative LLM-based applications: a travel planning agent and a music composition system. These applications served as practical test cases for our framework. We first configured the system through the UI to align with our intended prompt optimization workflow, including setting up specialized reasoning agents and defining context-aware retrieval parameters. We then populated the knowledge base with our curated collection of research papers, technical documentation, and expert resources.
+
+The evaluation process simulated real developer interactions with the framework. We uploaded the notebook implementations of both test applications and used the system to generate initial prompt recommendations. This approach allowed us to assess the framework's ability to analyze existing code, understand the specific requirements of each application, and provide relevant prompt design suggestions based on the latest research and best practices stored in our knowledge base.
+
+\clearpage
+
+\section{Results and Analysis}
+Our initial evaluation of RagBuilder~\cite{KruxAI2024RagBuilder} yielded valuable insights for implementing the \gls{rag} mechanism in the Kotaemon application~\cite{Cinnamon2024Kotaemon}. The tool evaluated multiple \gls{rag} configurations, with the best-performing setup achieving 96\% answer correctness and 98\% context precision and recall. This configuration utilized a RecursiveCharacterTextSplitter with 300-token chunks and 200-token overlap, combined with a hybrid retrieval approach that merged vector similarity and BM25 retrieval methods. The implementation leveraged OpenAI's text-embedding-3-large model for embeddings and included BAAI/bge-reranker-base for contextual compression. These findings provided a strong foundation for our \gls{rag} implementation, though we noted that the evaluation was limited to a smaller dataset due to API quota constraints. This initial phase helped establish the core \gls{rag} architecture while identifying key areas for optimization in the subsequent development of the Kotaemon application.
+
+
+\clearpage
+\section{Discussion and Future Work}
+
+
+\clearpage
+\bibliographystyle{myIEEEtran}
+\bibliography{II2202-research-plan}
+\end{document}
